@@ -84,3 +84,16 @@ The server uses [`starlette`](https://github.com/encode/starlette) for the web f
 This docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine:3.8`](https://hub.docker.com/_/alpine/).
 
 [1]:youtube-dl-server.png
+
+# Export to NAS
+## Synology
+
+To export this project to your synology nas, you need to build the docker locally and export the image:
+
+```shell
+docker save youtube-dl > youtube-dl.tar
+```
+
+Then upload this file to your NAS and load the image via file import.
+
+Set the output port to 8080 and a mount to /youtube-dl and you're ready to go.

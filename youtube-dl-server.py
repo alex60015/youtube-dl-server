@@ -18,8 +18,7 @@ app_defaults = {
     "YDL_EXTRACT_AUDIO_FORMAT": None,
     "YDL_EXTRACT_AUDIO_QUALITY": "192",
     "YDL_RECODE_VIDEO_FORMAT": None,
-    "YDL_OUTPUT_TEMPLATE": "/youtube-dl/%(title).200s [%(id)s].%(ext)s",
-    "YDL_ARCHIVE_FILE": None,
+    "YDL_ARCHIVE_FILE": "/usr/src/app/youtube-dl/youtube-dl_archive_file",
     "YDL_SERVER_HOST": "0.0.0.0",
     "YDL_SERVER_PORT": 8080,
     "YDL_UPDATE_TIME": "True",
@@ -29,17 +28,18 @@ app_defaults = {
 async def dl_queue_list(request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
-    options = {"format": form.get("format")}
+    name = form.get("name").strip()
+    path = form.get("path").strip()
 
     if not url:
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
+    options = {"format": form.get("format"), "name": name, "path": path}
     task = BackgroundTask(download, url, options)
 
     print("Added url " + url + " to the download queue")
@@ -72,11 +72,11 @@ def get_ydl_options(request_options):
 
     requested_format = request_options.get("format", "bestvideo")
 
-    if requested_format in ["aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"]:
+    if requested_format in ["aac", "mp3"]:
         request_vars["YDL_EXTRACT_AUDIO_FORMAT"] = requested_format
     elif requested_format == "bestaudio":
         request_vars["YDL_EXTRACT_AUDIO_FORMAT"] = "best"
-    elif requested_format in ["mp4", "flv", "webm", "ogg", "mkv", "avi"]:
+    elif requested_format in ["mp4"]:
         request_vars["YDL_RECODE_VIDEO_FORMAT"] = requested_format
 
     ydl_vars = ChainMap(request_vars, os.environ, app_defaults)
@@ -100,10 +100,15 @@ def get_ydl_options(request_options):
             }
         )
 
+    path = request_options.get("path")
+    name = request_options.get("name")
+    if name == "":
+        name = "%(title)s.%(ext)s"
+
     return {
         "format": ydl_vars["YDL_FORMAT"],
         "postprocessors": postprocessors,
-        "outtmpl": ydl_vars["YDL_OUTPUT_TEMPLATE"],
+        "outtmpl": "/usr/src/app/youtube-dl/" + path + name,
         "download_archive": ydl_vars["YDL_ARCHIVE_FILE"],
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
     }
@@ -115,10 +120,9 @@ def download(url, request_options):
 
 
 routes = [
-    Route("/youtube-dl", endpoint=dl_queue_list),
-    Route("/youtube-dl/q", endpoint=q_put, methods=["POST"]),
-    Route("/youtube-dl/update", endpoint=update_route, methods=["PUT"]),
-    Mount("/youtube-dl/static", app=StaticFiles(directory="static"), name="static"),
+    Route("/", endpoint=dl_queue_list),
+    Route("/q", endpoint=q_put, methods=["POST"]),
+    Route("/update", endpoint=update_route, methods=["PUT"]),
 ]
 
 app = Starlette(debug=True, routes=routes)
