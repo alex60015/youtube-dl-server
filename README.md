@@ -100,6 +100,7 @@ Set the output port to 8080 and a mount to /youtube-dl and you're ready to go.
 
 # TODOS
 - Add proper response of running downloads / status
+  - Disable button for 2-5 Seconds fter clicking it
 - Show error if file could not be downloaded (dry run/[simulate](https://github.com/ytdl-org/youtube-dl/blob/08250b69c29f8fc3bb73c6461363472197a86f03/youtube_dl/YoutubeDL.py#L160) beforehand?)
 - Show error and path if file was already downloaded
   - Option to ignore it and download again?
