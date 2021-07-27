@@ -31,7 +31,7 @@
         <div>
             <form method="POST" id="download-form" action="">
                 <div class="form-group row">
-                    <label for="url" class="col-sm-2 col-form-label">URL & Format: </label>
+                    <label for="url" class="col-sm-2 col-form-label">URL & Format:</label>
                     <div class="col-sm-8">
                         <input
                             name="url"
@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">Musik / Video Name: </label>
+                    <label for="name" class="col-sm-2 col-form-label">Musik / Video Name:</label>
                     <div class="col-sm-10">
                         <input
                             name="name"
@@ -70,7 +70,7 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="path" class="col-sm-2 col-form-label">Speicherort: </label>
+                    <label for="path" class="col-sm-2 col-form-label">Speicherort:</label>
                     <div class="col-sm-10">
                         <input
                             name="path"
@@ -82,19 +82,21 @@
                     </div>
                 </div>
 
-                <div class="input-group-append" style="margin-bottom: 20px;">
-                    <button class="btn btn-primary" type="submit" id="button-submit">Submit</button>
+                <div class="form-group row offset-sm-2" style="margin-bottom: 20px;">
+                    <button class="btn btn-primary col-sm-3" type="submit" id="button-submit">Submit</button>
                 </div>
 
-                <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
-                    <p>
-                        Beim Herunterladen ist ein Fehler aufgetreten!<br />
-                        Bitte kontaktiere den Serveradmin mit der URL welche heruntergeladen werden sollte.
-                    </p>
-                </div>
+                <div class="form-group row offset-sm-2">
+                    <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
+                        <p>
+                            Beim Herunterladen ist ein Fehler aufgetreten!<br />
+                            Bitte kontaktiere den Serveradmin mit der URL welche heruntergeladen werden sollte.
+                        </p>
+                    </div>
 
-                <div class="alert alert-info" style="display: none" role="alert" id="info-container">
-                    <p>Das Lied  / Video wird nun heruntergeladen.</p>
+                    <div class="alert alert-info" style="display: none" role="alert" id="info-container">
+                        <p>Das Lied  / Video wird nun heruntergeladen.</p>
+                    </div>
                 </div>
             </form>
         </div>

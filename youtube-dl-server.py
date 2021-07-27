@@ -20,7 +20,6 @@ app_defaults = {
     "YDL_EXTRACT_AUDIO_FORMAT": None,
     "YDL_EXTRACT_AUDIO_QUALITY": "192",
     "YDL_RECODE_VIDEO_FORMAT": None,
-    "YDL_ARCHIVE_FILE": "/usr/src/app/youtube-dl/youtube-dl_archive_file",
     "YDL_SERVER_HOST": "0.0.0.0",
     "YDL_SERVER_PORT": 8080,
     "YDL_UPDATE_TIME": "True",
@@ -71,7 +70,7 @@ async def q_put(request):
 
     task = BackgroundTask(download, url, options)
 
-    print("Added url " + url + " to the download queue")
+    print("Added url to the download queue: " + url)
     return JSONResponse(
         {"success": True, "url": url, "options": options}, background=task
     )
@@ -133,7 +132,6 @@ def get_ydl_options(request_options):
         "format": ydl_vars["YDL_FORMAT"],
         "postprocessors": postprocessors,
         "outtmpl": request_options.get("tmpPath") + request_options.get("name"),
-        "download_archive": ydl_vars["YDL_ARCHIVE_FILE"],
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
     }
 
@@ -147,7 +145,7 @@ def download(url, request_options):
         resultPath = request_options.get("resultPath") + name + "." + format
 
         print("Download complete, move " + name + " from " + tmpPath + " to " + resultPath)
-        os.makedirs(request_options.get("resultPath"))
+        os.makedirs(request_options.get("resultPath"), exist_ok=True)
         shutil.move(tmpPath, resultPath)
 
 routes = [
