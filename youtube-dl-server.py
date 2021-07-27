@@ -1,14 +1,14 @@
 import os, sys, subprocess
 
 from starlette.applications import Starlette
-from starlette.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
+from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 import uvicorn
 from youtube_dl import YoutubeDL
+import youtube_dl
 from collections import ChainMap
 import shutil
 import os
@@ -54,6 +54,21 @@ async def q_put(request):
     resultPath = "/usr/src/app/youtube-dl" + path
 
     options = {"format": form.get("format"), "tmpPath": tmpPath, "resultPath": resultPath, "name": name}
+
+    print("Check Url...")
+    ydl = YoutubeDL()
+    with ydl:
+        try:
+            result = ydl.extract_info(url, download=False)
+        except youtube_dl.DownloadError as e:
+            print("URL not supported: " + url)
+
+            return JSONResponse(
+                { "success": False, "url": url, "options": options }, status_code=400
+            )
+
+    print("Check complete")
+
     task = BackgroundTask(download, url, options)
 
     print("Added url " + url + " to the download queue")

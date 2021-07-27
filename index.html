@@ -15,16 +15,18 @@
         crossorigin="anonymous"
     >
 
-    <title>youtube-dl</title>
+    <title>YouTube Downloader</title>
 </head>
 
 <body style="background-color: #002b36;">
 <div class="container d-flex flex-column text-light text-center" style="height: 100vh;">
     <div class="flex-grow-1"></div>
     <div class="jumbotron bg-transparent flex-grow-1">
-        <h1 class="display-4">youtube-dl</h1>
-        <p class="lead">Enter a video url to download the video to the server. Url can be to YouTube or any
-            other supported site. The server will automatically download the highest quality version available.</p>
+        <h1 class="display-4">YouTube Downloader</h1>
+        <p class="lead">
+            Gib eine URL an und diese wird im gewünschten Format heruntergeladen.
+            Nicht nur YouTube funktioniert, also einfach ausprobieren!
+        </p>
         <hr class="my-4">
         <div>
             <form method="POST" id="download-form" action="">
@@ -53,21 +55,33 @@
                         name="name"
                         type="text"
                         class="form-control"
-                        placeholder="Video's name"
+                        placeholder="Name zum Speichern"
                         aria-label="URL"
                     >
-                    <span>If you leave this empty, the name will be the video title</span>
+                    <span>Wenn du dies leer lässt, wird stattdesen der Videotitel genommen.</span>
                 </div>
                 <div class="mb-3">
                     <input
                         name="path"
                         type="text"
                         class="form-control"
+                        placeholder="Speicherort"
                     >
-                    <span>The default path is /music/youtube-dl/. If you add a path, it will create the folders inside this directory</span>
+                    <span>Der Speicherort ist /music/youtube-dl/. Wenn du einen Pfad angibst, werden darunter deine Ordner erstellt.</span>
                 </div>
-                <div class="input-group-append">
+                <div class="input-group-append" style="margin-bottom: 20px;">
                     <button class="btn btn-primary" type="submit" id="button-submit">Submit</button>
+                </div>
+
+                <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
+                    <p>
+                        Beim Herunterladen ist ein Fehler aufgetreten!<br />
+                        Bitte kontaktiere den Serveradmin mit der URL welche heruntergeladen werden sollte.
+                    </p>
+                </div>
+
+                <div class="alert alert-info" style="display: none" role="alert" id="info-container">
+                    <p>Das Lied  / Video wird nun heruntergeladen.</p>
                 </div>
             </form>
         </div>
@@ -95,6 +109,16 @@
         $("#download-form").submit(async function (event) {
             event.preventDefault();
 
+            // Reset message container
+            const info = document.getElementById("info-container");
+            const err = document.getElementById("error-container");
+            info.style.display = "none"
+            err.style.display = "none"
+
+            // Disable button till request ist done
+            btn = document.getElementById("button-submit");
+            btn.disabled = true;
+
             let body = new URLSearchParams();
             for (const pair of new FormData(document.getElementById("download-form"))) {
                 body.append(pair[0], pair[1]);
@@ -109,8 +133,13 @@
             });
 
             if (response.ok) {
-                alert("Download läuft, bitte warten...");
+                info.style.display = "block"
+            } else if (response.status === 400) {
+                err.style.display = "block"
             }
+
+            // Enable button afterwards
+            btn.disabled = false;
         })
     })
 </script>
