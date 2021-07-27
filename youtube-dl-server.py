@@ -10,6 +10,8 @@ from starlette.background import BackgroundTask
 import uvicorn
 from youtube_dl import YoutubeDL
 from collections import ChainMap
+import shutil
+import os
 
 templates = Jinja2Templates(directory="")
 
@@ -39,7 +41,19 @@ async def q_put(request):
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
-    options = {"format": form.get("format"), "name": name, "path": path}
+    if name == "":
+        name = "%(title)s.%(ext)s"
+
+    if not path.startswith("/"):
+        path = "/" + path
+
+    if not path.endswith("/"):
+        path = path + "/"
+
+    tmpPath = "/tmp/youtube-dl" + path
+    resultPath = "/usr/src/app/youtube-dl" + path
+
+    options = {"format": form.get("format"), "tmpPath": tmpPath, "resultPath": resultPath, "name": name}
     task = BackgroundTask(download, url, options)
 
     print("Added url " + url + " to the download queue")
@@ -100,24 +114,26 @@ def get_ydl_options(request_options):
             }
         )
 
-    path = request_options.get("path")
-    name = request_options.get("name")
-    if name == "":
-        name = "%(title)s.%(ext)s"
-
     return {
         "format": ydl_vars["YDL_FORMAT"],
         "postprocessors": postprocessors,
-        "outtmpl": "/usr/src/app/youtube-dl/" + path + name,
+        "outtmpl": request_options.get("tmpPath") + request_options.get("name"),
         "download_archive": ydl_vars["YDL_ARCHIVE_FILE"],
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
     }
-
 
 def download(url, request_options):
     with YoutubeDL(get_ydl_options(request_options)) as ydl:
         ydl.download([url])
 
+        format = request_options.get("format")
+        name = request_options.get("name")
+        tmpPath = request_options.get("tmpPath") + name + "." + format
+        resultPath = request_options.get("resultPath") + name + "." + format
+
+        print("Download complete, move " + name + " from " + tmpPath + " to " + resultPath)
+        os.makedirs(request_options.get("resultPath"))
+        shutil.move(tmpPath, resultPath)
 
 routes = [
     Route("/", endpoint=dl_queue_list),
