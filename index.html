@@ -2,162 +2,149 @@
 <html lang="en">
 
 <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="Description" content="Web frontend for youtube-dl">
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="Description" content="Web frontend for youtube-dl">
 
-    <!-- Bootstrap CSS -->
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-        integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2"
-        crossorigin="anonymous"
-    >
+  <!-- Bootstrap CSS -->
+  <link href="youtube-dl/static/style.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 
-    <title>YouTube Downloader</title>
+  <title>youtube-dl</title>
 </head>
 
-<body style="background-color: #002b36;">
-<div class="container d-flex flex-column text-light text-center" style="height: 100vh;">
+<body>
+  <div class="container d-flex flex-column text-light text-center">
     <div class="flex-grow-1"></div>
     <div class="jumbotron bg-transparent flex-grow-1">
-        <h1 class="display-4">YouTube Downloader</h1>
-        <p class="lead">
-            Gib eine URL an und diese wird im gewünschten Format heruntergeladen.
-            Nicht nur YouTube funktioniert, also einfach ausprobieren!
-        </p>
-        <hr class="my-4">
-        <div>
-            <form method="POST" id="download-form" action="">
-                <div class="form-group row">
-                    <label for="url" class="col-sm-2 col-form-label">URL & Format:</label>
-                    <div class="col-sm-8">
-                        <input
-                            name="url"
-                            type="url"
-                            class="form-control"
-                            placeholder="URL"
-                            aria-label="URL"
-                            aria-describedby="button-submit"
-                            autocomplete="off"
-                            autofocus
-                        >
-                    </div>
-                    <div class="col">
-                        <select class="custom-select" name="format" style="flex: 0.1 1 100px;">
-                          <optgroup label="Audio">
-                            <option value="mp3">MP3</option>
-                            <option value="aac">AAC</option>
-                          </optgroup>
-                          <optgroup label="Video">
-                            <option value="mp4">MP4</option>
-                          </optgroup>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">Musik / Video Name:</label>
-                    <div class="col-sm-10">
-                        <input
-                            name="name"
-                            type="text"
-                            class="form-control"
-                            placeholder="Name zum Speichern"
-                            autocomplete="off"
-                        >
-                        <span>Wenn du dies leer lässt, wird stattdesen der Videotitel genommen.</span>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="path" class="col-sm-2 col-form-label">Speicherort:</label>
-                    <div class="col-sm-10">
-                        <input
-                            name="path"
-                            type="text"
-                            class="form-control"
-                            placeholder="Speicherort"
-                        >
-                        <span>Der Speicherort ist /music/youtube-dl/. Wenn du einen Pfad angibst, werden darunter deine Ordner erstellt.</span>
-                    </div>
-                </div>
+      <h1 class="display-4">youtube-dl</h1>
+      <p class="lead">Enter a video url to download the video to the server. Url can be to YouTube or <a class="text-info"
+          href="https://ytdl-org.github.io/youtube-dl/supportedsites.html">any
+          other supported site</a>. The server will automatically download the highest quality version available.</p>
+      <hr class="my-4">
+      <div>
+        <form method="POST" id="download-form">
+          <div class="form-group row">
+            <label for="url" class="col-sm-2 col-form-label">URL & Format:</label>
+            <div class="col-sm-8">
+              <input name="url" type="url" class="form-control" placeholder="URL" aria-label="URL"
+                aria-describedby="button-submit" autocomplete="off" autofocus>
+            </div>
+            <div class="col">
+              <select class="custom-select" name="format">
+                <optgroup label="Video">
+                  <option value="bestvideo">Best Video</option>
+                  <option value="mp4">MP4</option>
+                  <option value="flv">Flash Video (FLV)</option>
+                  <option value="ogg">Ogg</option>
+                  <option value="mkv">Matroska (MKV)</option>
+                  <option value="avi">AVI</option>
+                </optgroup>
+                <optgroup label="Audio">
+                  <option value="bestaudio">Best Audio</option>
+                  <option value="aac">AAC</option>
+                  <option value="flac">FLAC</option>
+                  <option value="mp3">MP3</option>
+                  <option value="m4a">M4A</option>
+                  <option value="opus">Opus</option>
+                  <option value="vorbis">Vorbis</option>
+                  <option value="wav">WAV</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="name" class="col-sm-2 col-form-label">Filename:</label>
+            <div class="col-sm-10">
+              <input name="name" type="text" class="form-control" placeholder="Name zum Speichern" autocomplete="off">
+              <span>If you leave this input empty, the title of the video is taken instead.</span>
+            </div>
+          </div>
+          <div class="form-group row">
+            <label for="path" class="col-sm-2 col-form-label">Save directory:</label>
+            <div class="col-sm-10">
+              <input name="path" type="text" class="form-control" placeholder="Speicherort">
+              <span>The save directory is <bold>always</bold> where the administrator mounted the docker to.</span>
+              <span>If you add a directory, it will be saved inside the mounted directory.</span>
+            </div>
+          </div>
 
-                <div class="form-group row offset-sm-2" style="margin-bottom: 20px;">
-                    <button class="btn btn-primary col-sm-3" type="submit" id="button-submit">Submit</button>
-                </div>
+          <div class="form-group row offset-sm-2" style="margin-bottom: 20px;">
+            <button class="btn btn-primary col-sm-3" type="submit" id="button-submit">Submit</button>
+          </div>
 
-                <div class="form-group row offset-sm-2">
-                    <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
-                        <p>
-                            Beim Herunterladen ist ein Fehler aufgetreten!<br />
-                            Bitte kontaktiere den Serveradmin mit der URL welche heruntergeladen werden sollte.
-                        </p>
-                    </div>
+          <div class="form-group row offset-sm-2">
+            <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
+              <p>
+                An error occured while downloading the file!<br />
+                Please contact your administrator with the url to solve the problem.
+              </p>
+            </div>
 
-                    <div class="alert alert-info" style="display: none" role="alert" id="info-container">
-                        <p>Das Lied  / Video wird nun heruntergeladen.</p>
-                    </div>
-                </div>
-            </form>
-        </div>
+            <div class="alert alert-info" style="display: none" role="alert" id="info-container">
+              <p>The file will be downloaded in the background! You can now continue downloading more content.</p>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
+    <footer>
+      <div>
+        <p class="text-muted">Web frontend for <a class="text-light" href="https://rg3.github.io/youtube-dl/">youtube-dl</a>,
+          by <a class="text-light" href="https://twitter.com/manbearwiz">@manbearwiz</a>.</p>
+      </div>
+    </footer>
+  </div>
 
-<!-- Optional JavaScript -->
-<!-- jQuery first, then Popper.js, then Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-        crossorigin="anonymous"
-></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
-        crossorigin="anonymous"
-></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js"
-        integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s"
-        crossorigin="anonymous"
-></script>
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
 
-<!-- Custom Javascript -->
-<script>
+  <!-- Handle form submit -->
+  <script>
     $(document).ready(function () {
-        $("#download-form").submit(async function (event) {
-            event.preventDefault();
+      $("#download-form").submit(async function (event) {
+        event.preventDefault();
 
-            // Reset message container
-            const info = document.getElementById("info-container");
-            const err = document.getElementById("error-container");
-            info.style.display = "none"
-            err.style.display = "none"
+        // Reset message container
+        const info = document.getElementById("info-container");
+        const err = document.getElementById("error-container");
+        info.style.display = "none"
+        err.style.display = "none"
 
-            // Disable button till request ist done
-            btn = document.getElementById("button-submit");
-            btn.disabled = true;
+        // Disable button till request ist done
+        btn = document.getElementById("button-submit");
+        btn.disabled = true;
 
-            let body = new URLSearchParams();
-            for (const pair of new FormData(document.getElementById("download-form"))) {
-                body.append(pair[0], pair[1]);
-            }
+        // Create body in correct format
+        let body = new URLSearchParams();
+        for (const pair of new FormData(document.getElementById("download-form"))) {
+          body.append(pair[0], pair[1]);
+        }
 
-            let response = await fetch("/q", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: body
-            });
+        let response = await fetch("/q", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: body
+        });
 
-            if (response.ok) {
-                info.style.display = "block"
-            } else if (response.status === 400) {
-                err.style.display = "block"
-            }
+        // Error / Info handling
+        if (response.ok) {
+          info.style.display = "block"
+        } else if (response.status === 400) {
+          err.style.display = "block"
+        }
 
-            // Enable button afterwards
-            btn.disabled = false;
-        })
+        // Enable button again
+        btn.disabled = false;
+      })
     })
-</script>
+  </script>
 </body>
 
 </html>

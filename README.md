@@ -15,7 +15,15 @@ Very spartan Web and REST interface for downloading youtube videos onto a server
 This example uses the docker run command to create the container to run the app. Here we also use host networking for simplicity. Also note the `-v` argument. This directory will be used to output the resulting videos
 
 ```shell
-docker run -d --net="host" --name youtube-dl -v /home/core/youtube-dl:/youtube-dl kmb32123/youtube-dl-server
+docker build -t yt-dlp . &&
+docker run -d --net="host" --name youtube-dl -v /home/core/youtube-dl:/youtube-dl yt-dlp
+```
+
+To make changes without reloading the image you can add these two parameters to the `docker run` command
+
+```shell
+-v /home/$USER/youtube-dl-server/youtube-dl-server.py:/usr/src/app/youtube-dl-server.py \
+-v /home/$USER/youtube-dl-server/index.html:/usr/src/app/index.html \
 ```
 
 ### Docker Compose
@@ -84,22 +92,3 @@ The server uses [`starlette`](https://github.com/encode/starlette) for the web f
 This docker image is based on [`python:alpine`](https://registry.hub.docker.com/_/python/) and consequently [`alpine:3.8`](https://hub.docker.com/_/alpine/).
 
 [1]:youtube-dl-server.png
-
-# Export to NAS
-## Synology
-
-To export this project to your synology nas, you need to build the docker locally and export the image:
-
-```shell
-docker save youtube-dl > youtube-dl.tar
-```
-
-Then upload this file to your NAS and load the image via file import.
-
-Set the output port to 8080 and a mount to /youtube-dl and you're ready to go.
-
-### Personal docker run
-
-```shell
-docker stop youtube-dl || docker rm youtube-dl || docker run -d -p 8080:8080 --name youtube-dl -v /home/$USER/dev/youtube-dl-server/youtube-dl:/usr/src/app/youtube-dl/ -v /home/$USER/dev/youtube-dl-server/youtube-dl-server.py:/usr/src/app/youtube-dl-server.py -v /home/$USER/dev/youtube-dl-server/index.html:/usr/src/app/index.html youtube-dl:local
-```

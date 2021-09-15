@@ -7,8 +7,8 @@ from starlette.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 import uvicorn
-from youtube_dl import YoutubeDL
-import youtube_dl
+from yt_dlp import YoutubeDL
+import yt_dlp
 from collections import ChainMap
 import shutil
 import os
@@ -32,16 +32,23 @@ async def dl_queue_list(request):
 async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
-    name = form.get("name").strip()
-    path = form.get("path").strip()
+    name = form.get("name")
+    path = form.get("path")
 
     if not url:
         return JSONResponse(
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
-    if name == "":
+    if name == None:
         name = "%(title)s.%(ext)s"
+    else:
+        name = name.strip()
+
+    if path == None:
+        path = ""
+    else:
+        path = path.strip()
 
     if not path.startswith("/"):
         path = "/" + path
@@ -98,7 +105,7 @@ def get_ydl_options(request_options):
         "YDL_RECODE_VIDEO_FORMAT": None,
     }
 
-    requested_format = request_options.get("format", "bestvideo")
+    requested_format = request_options.get("format", "bestaudio")
 
     if requested_format in ["aac", "mp3"]:
         request_vars["YDL_EXTRACT_AUDIO_FORMAT"] = requested_format
@@ -106,6 +113,8 @@ def get_ydl_options(request_options):
         request_vars["YDL_EXTRACT_AUDIO_FORMAT"] = "best"
     elif requested_format in ["mp4"]:
         request_vars["YDL_RECODE_VIDEO_FORMAT"] = requested_format
+
+    print("[youtube-dl-server]" + requested_format)
 
     ydl_vars = ChainMap(request_vars, os.environ, app_defaults)
 
@@ -133,6 +142,7 @@ def get_ydl_options(request_options):
         "postprocessors": postprocessors,
         "outtmpl": request_options.get("tmpPath") + request_options.get("name"),
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
+        "verbose": "true",
     }
 
 def download(url, request_options):
@@ -145,8 +155,19 @@ def download(url, request_options):
         resultPath = request_options.get("resultPath") + name + "." + format
 
         print("Download complete, move " + name + " from " + tmpPath + " to " + resultPath)
+        print("Listing Files: " + name + " - " + format)
+        list_files("/tmp/youtube-dl/")
         os.makedirs(request_options.get("resultPath"), exist_ok=True)
         shutil.move(tmpPath, resultPath)
+
+def list_files(startpath):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
 
 routes = [
     Route("/", endpoint=dl_queue_list),
