@@ -1,4 +1,4 @@
-import os, sys, subprocess
+import sys, subprocess
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -8,7 +8,6 @@ from starlette.background import BackgroundTask
 
 import uvicorn
 from yt_dlp import YoutubeDL
-import yt_dlp
 from collections import ChainMap
 import shutil
 import os
@@ -29,6 +28,7 @@ app_defaults = {
 async def dl_queue_list(request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 async def q_put(request):
     form = await request.form()
     url = form.get("url").strip()
@@ -40,12 +40,12 @@ async def q_put(request):
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
-    if name == None:
+    if name is None:
         name = "%(title)s.%(ext)s"
     else:
         name = name.strip()
 
-    if path == None:
+    if path is None:
         path = ""
     else:
         path = path.strip()
@@ -56,21 +56,23 @@ async def q_put(request):
     if not path.endswith("/"):
         path = path + "/"
 
-    tmpPath = "/tmp/youtube-dl" + path
-    resultPath = "/usr/src/app/youtube-dl" + path
-
-    options = {"format": form.get("format"), "tmpPath": tmpPath, "resultPath": resultPath, "name": name}
+    options = {
+        "format": form.get("format"),
+        "tmp_path": "/tmp/youtube-dl" + path,
+        "result_path": "/usr/src/app/youtube-dl" + path,
+        "name": name
+    }
 
     print("Check Url...")
     ydl = YoutubeDL()
     with ydl:
         try:
-            result = ydl.extract_info(url, download=False)
-        except youtube_dl.DownloadError as e:
+            ydl.extract_info(url, download=False)
+        except Exception as e:
             print("URL not supported: " + url)
 
             return JSONResponse(
-                { "success": False, "url": url, "options": options }, status_code=400
+                {"success": False, "url": url, "options": options}, status_code=400
             )
 
     print("Check complete")
@@ -83,7 +85,7 @@ async def q_put(request):
     )
 
 
-async def update_route(scope, receive, send):
+async def update_route(_scope, _receive, _send):
     task = BackgroundTask(update)
 
     return JSONResponse({"output": "Initiated package update"}, background=task)
@@ -98,6 +100,7 @@ def update():
         print(output.decode("ascii"))
     except subprocess.CalledProcessError as e:
         print(e.output)
+
 
 def get_ydl_options(request_options):
     request_vars = {
@@ -140,34 +143,38 @@ def get_ydl_options(request_options):
     return {
         "format": ydl_vars["YDL_FORMAT"],
         "postprocessors": postprocessors,
-        "outtmpl": request_options.get("tmpPath") + request_options.get("name"),
+        "outtmpl": request_options.get("tmp_path") + request_options.get("name"),
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
         "verbose": "true",
     }
+
 
 def download(url, request_options):
     with YoutubeDL(get_ydl_options(request_options)) as ydl:
         ydl.download([url])
 
-        format = request_options.get("format")
+        video_format = request_options.get("format")
         name = request_options.get("name")
-        tmpPath = request_options.get("tmpPath") + name + "." + format
-        resultPath = request_options.get("resultPath") + name + "." + format
+        tmp_path = request_options.get("tmp_path") + name + "." + video_format
+        result_path = request_options.get("result_path") + name + "." + video_format
 
-        print("Download complete, move " + name + " from " + tmpPath + " to " + resultPath)
-        print("Listing Files: " + name + " - " + format)
+        print("Download complete, move " + name + " from " + tmp_path + " to " + result_path)
+        print("Listing Files: " + name + " - " + video_format)
         list_files("/tmp/youtube-dl/")
-        os.makedirs(request_options.get("resultPath"), exist_ok=True)
-        shutil.move(tmpPath, resultPath)
+        os.makedirs(request_options.get("result_path"), exist_ok=True)
+        shutil.move(tmp_path, result_path)
+        list_files("/usr/src/app/youtube-dl/")
+
 
 def list_files(startpath):
     for root, dirs, files in os.walk(startpath):
         level = root.replace(startpath, '').count(os.sep)
         indent = ' ' * 4 * (level)
         print('{}{}/'.format(indent, os.path.basename(root)))
-        subindent = ' ' * 4 * (level + 1)
+        sub_indent = ' ' * 4 * (level + 1)
         for f in files:
-            print('{}{}'.format(subindent, f))
+            print('{}{}'.format(sub_indent, f))
+
 
 routes = [
     Route("/", endpoint=dl_queue_list),
