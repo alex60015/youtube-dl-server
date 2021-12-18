@@ -1,4 +1,4 @@
-import sys, subprocess
+import sys, subprocess, stat
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
@@ -22,6 +22,7 @@ app_defaults = {
     "YDL_SERVER_HOST": "0.0.0.0",
     "YDL_SERVER_PORT": 8080,
     "YDL_UPDATE_TIME": "True",
+    "YDL_DEFAULT_PATH": "/usr/src/app/youtube-dl"
 }
 
 
@@ -40,8 +41,8 @@ async def q_put(request):
             {"success": False, "error": "/q called without a 'url' in form data"}
         )
 
-    if name is None:
-        name = "%(title)s.%(ext)s"
+    if name == "":
+        name = "%(title).200s.%(ext)s"
     else:
         name = name.strip()
 
@@ -59,15 +60,19 @@ async def q_put(request):
     options = {
         "format": form.get("format"),
         "tmp_path": "/tmp/youtube-dl" + path,
-        "result_path": "/usr/src/app/youtube-dl" + path,
+        "result_path": app_vars["YDL_DEFAULT_PATH"] + path,
         "name": name
     }
 
-    print("Check Url...")
+    print("Checking url...")
     ydl = YoutubeDL()
     with ydl:
         try:
-            ydl.extract_info(url, download=False)
+            info = ydl.extract_info(url, download=False)
+            if form.get("name") == "":
+                options["downloadName"] = info["title"][:200] + "." + form.get("format")
+            else:
+                options["downloadName"] = options["name"] + "." + form.get("format")
         except Exception as e:
             print("URL not supported: " + url)
 
@@ -151,29 +156,14 @@ def get_ydl_options(request_options):
 
 def download(url, request_options):
     with YoutubeDL(get_ydl_options(request_options)) as ydl:
-        ydl.download([url])
+        test = ydl.download([url])
 
-        video_format = request_options.get("format")
-        name = request_options.get("name")
-        tmp_path = request_options.get("tmp_path") + name + "." + video_format
-        result_path = request_options.get("result_path") + name + "." + video_format
+        tmp_path = request_options.get("tmp_path") + request_options.get("downloadName")
+        result_path = request_options.get("result_path") + request_options.get("downloadName")
 
-        print("Download complete, move " + name + " from " + tmp_path + " to " + result_path)
-        print("Listing Files: " + name + " - " + video_format)
-        list_files("/tmp/youtube-dl/")
+        print("Download complete, move " + request_options.get("name") + " from " + tmp_path + " to " + result_path)
         os.makedirs(request_options.get("result_path"), exist_ok=True)
         shutil.move(tmp_path, result_path)
-        list_files("/usr/src/app/youtube-dl/")
-
-
-def list_files(startpath):
-    for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        indent = ' ' * 4 * (level)
-        print('{}{}/'.format(indent, os.path.basename(root)))
-        sub_indent = ' ' * 4 * (level + 1)
-        for f in files:
-            print('{}{}'.format(sub_indent, f))
 
 
 routes = [

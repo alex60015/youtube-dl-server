@@ -24,8 +24,11 @@
     <div class="jumbotron bg-transparent flex-grow-1">
         <h1 class="display-4">YouTube Downloader</h1>
         <p class="lead">
-            Gib eine URL an und diese wird im gewünschten Format heruntergeladen.
-            Nicht nur YouTube funktioniert, also einfach ausprobieren!
+            Put a url in the form and after submitting the form, it will be downloaded
+            Don't only try using YouTube, many more websites are supported!
+            <a class="text-info" href="https://ytdl-org.github.io/youtube-dl/supportedsites.html">
+                A full list of the supported sites
+            </a>
         </p>
         <hr class="my-4">
         <div>
@@ -58,7 +61,7 @@
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">Musik / Video Name:</label>
+                    <label for="name" class="col-sm-2 col-form-label">Music / Video Name:</label>
                     <div class="col-sm-10">
                         <input
                             id="name"
@@ -68,20 +71,21 @@
                             placeholder="Name zum Speichern"
                             autocomplete="off"
                         >
-                        <span>Wenn du dies leer lässt, wird stattdesen der Videotitel genommen.</span>
+                        <span>When you leave the name empty, the video title will be used.</span>
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="path" class="col-sm-2 col-form-label">Speicherort:</label>
+                    <label for="path" class="col-sm-2 col-form-label">Save location:</label>
                     <div class="col-sm-10">
                         <input
                             id="path"
                             name="path"
                             type="text"
                             class="form-control"
-                            placeholder="Speicherort"
+                            placeholder="Save location"
                         >
-                        <span>Der Speicherort ist /music/youtube-dl/. Wenn du einen Pfad angibst, werden darunter deine Ordner erstellt.</span>
+                        <p>The default folder is /music/youtube-dl/.</p>
+                        <p>If you fill in a custom saving location, it will be found in this path.</p>
                     </div>
                 </div>
 
@@ -92,13 +96,13 @@
                 <div class="form-group row offset-sm-2">
                     <div class="alert alert-danger" style="display: none" role="alert" id="error-container">
                         <p>
-                            Beim Herunterladen ist ein Fehler aufgetreten!<br/>
-                            Bitte kontaktiere den Serveradmin mit der URL welche heruntergeladen werden sollte.
+                            An error occured while trying to download this clip!<br/>
+                            Please contact the server admin with the URL, if you really want to download the clip.
                         </p>
                     </div>
 
                     <div class="alert alert-info" style="display: none" role="alert" id="info-container">
-                        <p>Das Lied / Video wird nun heruntergeladen.</p>
+                        <p>The Clip will be downloaded now.</p>
                     </div>
                 </div>
             </form>

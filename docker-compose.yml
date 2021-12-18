@@ -1,0 +1,9 @@
+version: '3'
+services:
+  youtube-dl-server:
+    build: .
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./:/usr/src/app/
+    network_mode: host
