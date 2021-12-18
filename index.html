@@ -16,6 +16,11 @@
     >
 
     <title>YouTube Downloader</title>
+    <style>
+        #info-container > p {
+            margin: 0;
+        }
+    </style>
 </head>
 
 <body style="background-color: #002b36;">
@@ -137,6 +142,13 @@
             info.style.display = "none"
             err.style.display = "none"
 
+            // Remove old download name
+            let elements = info.getElementsByClassName("delete-me")
+            const elementArray = Array.from(elements)
+            elementArray.forEach(e => {
+                e.remove()
+            })
+
             // Disable button till request ist done
             let btn = document.getElementById("button-submit");
             btn.disabled = true;
@@ -146,22 +158,31 @@
                 body.append(pair[0], pair[1]);
             }
 
-            let response = await fetch("/q", {
+            await fetch("/q", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 body: body
-            });
+            }).then(response => {
+                body = response.json().then(json => {
+                    let infoTag = document.createElement("p")
+                    infoTag.classList.add("delete-me")
+                    let nameTag = infoTag.cloneNode()
+                    infoTag.textContent = "The name of the file will be:"
+                    nameTag.textContent = json.options.downloadName
+                    info.append(infoTag)
+                    info.append(nameTag)
+                })
+                if (response.ok) {
+                    info.style.display = "block"
+                } else if (response.status === 400) {
+                    err.style.display = "block"
+                }
 
-            if (response.ok) {
-                info.style.display = "block"
-            } else if (response.status === 400) {
-                err.style.display = "block"
-            }
-
-            // Enable button afterwards
-            btn.disabled = false;
+                // Enable button afterwards
+                btn.disabled = false;
+            })
         })
     })
 </script>
