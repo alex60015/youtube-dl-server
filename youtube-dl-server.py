@@ -84,7 +84,7 @@ async def q_put(request):
 
     task = BackgroundTask(download, url, options)
 
-    print("Added url to the download queue: " + url)
+    print("Added url to the download queue")
     return JSONResponse(
         {"success": True, "url": url, "options": options}, background=task
     )
