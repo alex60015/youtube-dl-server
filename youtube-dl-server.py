@@ -45,6 +45,8 @@ async def q_put(request):
         name = "%(title).200s.%(ext)s"
     else:
         name = name.strip()
+        if not name.endswith("." + form.get("format"))
+            name = name + "." + form.get("format")
 
     if path is None:
         path = ""
@@ -151,6 +153,7 @@ def get_ydl_options(request_options):
         "outtmpl": request_options.get("tmp_path") + request_options.get("name"),
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
         "verbose": "true",
+        "fragment_retries": 1,
     }
 
 
