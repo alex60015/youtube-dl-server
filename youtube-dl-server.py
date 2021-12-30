@@ -1,16 +1,19 @@
-import sys, subprocess, stat
+import sys
+import subprocess
+import uvicorn
+import shutil
+import os
+from os.path import exists
+from slugify import slugify
+from yt_dlp import YoutubeDL
+from yt_dlp.utils import ExtractorError, UnsupportedError, DownloadError
+from collections import ChainMap
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
 from starlette.background import BackgroundTask
-
-import uvicorn
-from yt_dlp import YoutubeDL
-from collections import ChainMap
-import shutil
-import os
 
 templates = Jinja2Templates(directory="")
 
@@ -22,7 +25,8 @@ app_defaults = {
     "YDL_SERVER_HOST": "0.0.0.0",
     "YDL_SERVER_PORT": 8080,
     "YDL_UPDATE_TIME": "True",
-    "YDL_DEFAULT_PATH": "/usr/src/app/youtube-dl"
+    "YDL_DEFAULT_PATH": "/usr/src/app/youtube-dl",
+    "YDL_TMP_PATH": "/tmp/youtube-dl",
 }
 
 
@@ -30,28 +34,26 @@ async def dl_queue_list(request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-async def q_put(request):
-    form = await request.form()
-    url = form.get("url").strip()
-    name = form.get("name")
-    path = form.get("path")
+def validate_and_set_default_form_params(form):
+    form_inputs = {
+        "url": form.get("url").strip(),
+        "format": None,
+        "name": None,
+        "path": None,
+    }
 
-    if not url:
-        return JSONResponse(
-            {"success": False, "error": "/q called without a 'url' in form data"}
-        )
+    requested_format = form.get("format", "mp3")
 
-    if name == "":
-        name = "%(title).200s.%(ext)s"
-    else:
-        name = name.strip()
-        if not name.endswith("." + form.get("format"))
-            name = name + "." + form.get("format")
+    if not requested_format in ["aac", "mp3", "mp4"]:
+        requested_format = "mp3"
 
-    if path is None:
-        path = ""
-    else:
-        path = path.strip()
+    form_inputs["format"] = requested_format
+
+    form_inputs["name"] = form.get("name", "%(title).200s.%(ext)s").strip()
+    if form_inputs["name"].endswith("." + requested_format):
+        form_inputs["name"] = form_inputs["name"].replace(requested_format, "")
+
+    path = form.get("path", "/").strip()
 
     if not path.startswith("/"):
         path = "/" + path
@@ -59,36 +61,54 @@ async def q_put(request):
     if not path.endswith("/"):
         path = path + "/"
 
+    form_inputs["path"] = path
+
+    return form_inputs
+
+
+async def q_put(request):
+    form = await request.form()
+
+    form_inputs = validate_and_set_default_form_params(form)
+
+    if not form_inputs["url"]:
+        return JSONResponse(
+            {"success": False, "error": "/q called without a 'url' in form data"}
+        )
+
+    # Empty string equals: fill out later when we have the info
     options = {
-        "format": form.get("format"),
-        "tmp_path": "/tmp/youtube-dl" + path,
-        "result_path": app_vars["YDL_DEFAULT_PATH"] + path,
-        "name": name
+        "format": form_inputs.get("format"),
+        "path": form_inputs["path"],
+        "tmp_path": app_vars["YDL_TMP_PATH"] + form_inputs["path"],
+        "result_path": app_vars["YDL_DEFAULT_PATH"] + form_inputs["path"],
+        "name": "",
     }
 
-    print("Checking url...")
+    print("[youtube-dl-server] Checking url...")
     ydl = YoutubeDL()
     with ydl:
         try:
-            info = ydl.extract_info(url, download=False)
-            if form.get("name") == "":
-                options["downloadName"] = info["title"][:200] + "." + form.get("format")
+            info = ydl.extract_info(form_inputs["url"], download=False)
+            if form_inputs["name"] == "%(title).200s.%(ext)s":
+                options["name"] = slugify(info["title"][:200])
             else:
-                options["downloadName"] = options["name"] + "." + form.get("format")
-        except Exception as e:
-            print("URL not supported: " + url)
+                options["name"] = slugify(form_inputs["name"])
+
+        except (ExtractorError, UnsupportedError, DownloadError) as e:
+            print("URL not supported: " + form_inputs["url"])
 
             return JSONResponse(
-                {"success": False, "url": url, "options": options}, status_code=400
+                {"success": False, "url": form_inputs["url"], "options": options}, status_code=400
             )
 
-    print("Check complete")
+    print("[youtube-dl-server] Check complete")
 
-    task = BackgroundTask(download, url, options)
+    task = BackgroundTask(download, form_inputs["url"], options)
 
-    print("Added url to the download queue")
+    print("[youtube-dl-server] Added url to the download queue")
     return JSONResponse(
-        {"success": True, "url": url, "options": options}, background=task
+        {"success": True, "url": form_inputs["url"], "options": options}, background=task
     )
 
 
@@ -124,7 +144,7 @@ def get_ydl_options(request_options):
     elif requested_format in ["mp4"]:
         request_vars["YDL_RECODE_VIDEO_FORMAT"] = requested_format
 
-    print("[youtube-dl-server]" + requested_format)
+    print("[youtube-dl-server] " + requested_format)
 
     ydl_vars = ChainMap(request_vars, os.environ, app_defaults)
 
@@ -159,14 +179,24 @@ def get_ydl_options(request_options):
 
 def download(url, request_options):
     with YoutubeDL(get_ydl_options(request_options)) as ydl:
-        test = ydl.download([url])
+        ydl.download([url])
+        nameWithFormat = request_options.get("name") + "." + request_options["format"]
 
-        tmp_path = request_options.get("tmp_path") + request_options.get("downloadName")
-        result_path = request_options.get("result_path") + request_options.get("downloadName")
+        tmp_path = request_options.get("tmp_path") + nameWithFormat
+        result_path = request_options.get("result_path") + nameWithFormat
 
-        print("Download complete, move " + request_options.get("name") + " from " + tmp_path + " to " + result_path)
+        print(
+            "[youtube-dl-server] Download complete, move " + nameWithFormat +
+            " from " + tmp_path + " to " + result_path
+        )
         os.makedirs(request_options.get("result_path"), exist_ok=True)
-        shutil.move(tmp_path, result_path)
+
+        # I fucking hate the errors that the file is missing the format at the end...
+        tmp_path_without_format = request_options.get("tmp_path") + request_options.get("name")
+        if exists(tmp_path_without_format):
+            shutil.move(tmp_path_without_format, result_path)
+        else:
+            shutil.move(tmp_path, result_path)
 
 
 routes = [
@@ -177,7 +207,7 @@ routes = [
 
 app = Starlette(debug=True, routes=routes)
 
-print("Updating youtube-dl to the newest version")
+print("[youtube-dl-server] Updating youtube-dl to the newest version")
 update()
 
 app_vars = ChainMap(os.environ, app_defaults)

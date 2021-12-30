@@ -6,7 +6,7 @@ check_download_format () {
 
   echo "Download and check $format"
   # Rasputin vs Stalin. Epic Rap Battles of History
-  curl -X POST --data-urlencode "url=http://youtube.com/watch?v=ZT2z0nrsQ8o" \
+  curl -X POST --data-urlencode "url=https://www.youtube.com/watch?v=ZT2z0nrsQ8o" \
     --data-urlencode "name=Rasputin vs Stalin $format" \
     --data-urlencode "format=$format" \
     --data-urlencode "path=$format-Folder" \
@@ -18,7 +18,7 @@ check_download_format () {
   do
     echo "Checking..."
     sleep 10s
-    if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Download complete, move Rasputin vs Stalin $format"
+    if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Download complete, move rasputin-vs-stalin-$format.$format"
     then
       echo "$format Download complete"
       break
@@ -26,11 +26,9 @@ check_download_format () {
   done
 
   sleep 5s
-  if [ -f "$(pwd)/test/$format-Folder/Rasputin vs Stalin $format.$format" ]; then
+  if [ -f "$(pwd)/test/$format-Folder/rasputin-vs-stalin-$format.$format" ]; then
       echo "$format download WORKED"
   else
-      ls -la "$(pwd)/test/$format-Folder/Rasputin vs Stalin $format.$format"
-      echo "$(pwd)/test/$format-Folder/Rasputin vs Stalin $format.$format"
       echo "$format download FAILED."
       exit 1
   fi
@@ -52,9 +50,9 @@ main () {
 
   echo "All tests ran, doing cleanup"
   echo "Synology doesn't care about permissions, so the files belong to root and we need to delete them"
-  sudo rm -rf ./test/*
   docker container kill "$CONTAINER_ID"
   docker container rm "$CONTAINER_ID"
+  sudo rm -rf ./test/*
   echo "Done"
   return 0
 }
