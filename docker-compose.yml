@@ -1,0 +1,13 @@
+---
+version: "3.5"
+
+services:
+  yt-dlp:
+    container_name: "youtube-downloader-plus"
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - type: bind
+        source: ./output
+        target: /usr/src/app/output

@@ -1,20 +1,19 @@
-import os, sys, subprocess
+import os
+import shutil
+import subprocess
+import sys
+from collections import ChainMap
 
+import uvicorn
+import youtube_dl
 from starlette.applications import Starlette
+from starlette.background import BackgroundTask
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.templating import Jinja2Templates
-from starlette.background import BackgroundTask
-
-import uvicorn
 from youtube_dl import YoutubeDL
-import youtube_dl
-from collections import ChainMap
-import shutil
-import os
 
 templates = Jinja2Templates(directory="")
-
 app_defaults = {
     "YDL_FORMAT": "bestvideo+bestaudio/best",
     "YDL_EXTRACT_AUDIO_FORMAT": None,
@@ -28,6 +27,7 @@ app_defaults = {
 
 async def dl_queue_list(request):
     return templates.TemplateResponse("index.html", {"request": request})
+
 
 async def q_put(request):
     form = await request.form()
@@ -49,21 +49,21 @@ async def q_put(request):
     if not path.endswith("/"):
         path = path + "/"
 
-    tmpPath = "/tmp/youtube-dl" + path
-    resultPath = "/usr/src/app/youtube-dl" + path
+    tmp_path = "/tmp/youtube-dl" + path
+    result_path = "/usr/src/app/youtube-dl" + path
 
-    options = {"format": form.get("format"), "tmpPath": tmpPath, "resultPath": resultPath, "name": name}
+    options = {"format": form.get("format"), "tmpPath": tmp_path, "resultPath": result_path, "name": name}
 
     print("Check Url...")
     ydl = YoutubeDL()
     with ydl:
         try:
-            result = ydl.extract_info(url, download=False)
-        except youtube_dl.DownloadError as e:
+            ydl.extract_info(url, download=False)
+        except youtube_dl.DownloadError as _e:
             print("URL not supported: " + url)
 
             return JSONResponse(
-                { "success": False, "url": url, "options": options }, status_code=400
+                {"success": False, "url": url, "options": options}, status_code=400
             )
 
     print("Check complete")
@@ -76,7 +76,7 @@ async def q_put(request):
     )
 
 
-async def update_route(scope, receive, send):
+async def update_route(_scope, _receive, _send):
     task = BackgroundTask(update)
 
     return JSONResponse({"output": "Initiated package update"}, background=task)
@@ -91,6 +91,7 @@ def update():
         print(output.decode("ascii"))
     except subprocess.CalledProcessError as e:
         print(e.output)
+
 
 def get_ydl_options(request_options):
     request_vars = {
@@ -135,18 +136,22 @@ def get_ydl_options(request_options):
         "updatetime": ydl_vars["YDL_UPDATE_TIME"] == "True",
     }
 
+
 def download(url, request_options):
     with YoutubeDL(get_ydl_options(request_options)) as ydl:
         ydl.download([url])
 
-        format = request_options.get("format")
-        name = request_options.get("name")
-        tmpPath = request_options.get("tmpPath") + name + "." + format
-        resultPath = request_options.get("resultPath") + name + "." + format
+        request_format = request_options.get("format")
+        request_name = request_options.get("name")
+        tmp_path = request_options.get("tmpPath") + request_name
+        result_path = request_options.get("resultPath") + request_name + "." + request_format
+        if not result_path.endswith("." + request_format):
+            result_path = result_path + "." + request_format
 
-        print("Download complete, move " + name + " from " + tmpPath + " to " + resultPath)
+        print("Download complete, move " + request_name + " from " + tmp_path + " to " + result_path)
         os.makedirs(request_options.get("resultPath"), exist_ok=True)
-        shutil.move(tmpPath, resultPath)
+        shutil.move(tmp_path, result_path)
+
 
 routes = [
     Route("/", endpoint=dl_queue_list),
