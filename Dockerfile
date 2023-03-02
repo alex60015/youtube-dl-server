@@ -4,13 +4,13 @@
 # https://github.com/manbearwiz/youtube-dl-server-dockerfile
 #
 
-FROM python:alpine
+FROM python:3.10-alpine
 
 RUN apk add --no-cache \
   ffmpeg \
   tzdata
 
-RUN mkdir -p /usr/src/app
+RUN mkdir -p /usr/src/app/output
 WORKDIR /usr/src/app
 
 COPY requirements.txt /usr/src/app/
